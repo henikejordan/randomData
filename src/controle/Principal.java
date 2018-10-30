@@ -30,8 +30,8 @@ public class Principal {
      * @throws java.sql.SQLException
      */
     public static void main(String[] args) throws ParseException, SQLException {
-        String dataHoraIniBase = "2018-10-19 15:57:00", dataHoraFimBase = "2018-10-19 16:00:00";
-        String dataHoraNovo = "2018-10-19 16:00:06";
+        String dataHoraIniBase = "2000-10-19 00:00:00", dataHoraFimBase = "2000-10-19 16:00:00";
+        String dataHoraNovo = "2000-10-19 16:00:00";
         int segundos = 1200;
         String classe = "Fase 6";
 
