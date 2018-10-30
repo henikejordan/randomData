@@ -3,8 +3,11 @@ package controle;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Random;
 import modelo.Gases;
@@ -27,10 +30,14 @@ public class Principal {
      * @throws java.sql.SQLException
      */
     public static void main(String[] args) throws ParseException, SQLException {
+        String dataHoraIniBase = "2018-10-19 15:57:00", dataHoraFimBase = "2018-10-19 16:00:00";
+        String dataHoraNovo = "2018-10-19 16:00:06";
+        int segundos = 1200;
+        String classe = "Fase 6";
+
+        SimpleDateFormat dt = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
         ConectaBanco conecta = ConectaBanco.getInstance();
         Random gerador = new Random();
-        String dataHoraIniBase = "2018-10-19 15:57:00", dataHoraFimBase = "2018-10-19 15:57:30";
-        String dataHoraIniNovo = "2018-10-19 15:57:31", dataHoraFimNovo = "2018-10-19 21:00:00";
         List<Gases> gases = new ArrayList<>();
         List<Poeira10> poeira10s = new ArrayList<>();
         List<Poeira25> poeira25s = new ArrayList<>();
@@ -390,23 +397,12 @@ public class Principal {
         ////////////////////////////////////////////////////////////////////////
         /////////////////////////////Atualização////////////////////////////////
         ////////////////////////////////////////////////////////////////////////
-        resultGases = conecta.executaSQL("select * from gases "
-                + "where data_hora >= '" + dataHoraIniNovo + "' "
-                + "and data_hora <= '" + dataHoraFimNovo + "' "
-                + "order by data_hora");
-        int id_min = 0, id_max = 0;
-
-        if (resultGases.next()) {
-            id_min = resultGases.getInt("id_gases");
-            while (resultGases.next());
-            resultGases.previous();
-            id_max = resultGases.getInt("id_gases");
-        }
-
-        PreparedStatement pst = conecta.getConnection().prepareStatement("update gases set mq2=?, mq3=?, mq4=?,"
-                + " mq5=?, mq6=?, mq7=?, mq8=?, mq9=?, mq135=?, tgs822=?, tgs2600=?, tgs2602=?, tgs2603=? where id_gases=?");
-        int count = id_min;
-        while (count <= id_max) {
+        PreparedStatement pst = conecta.getConnection().prepareStatement("insert into gases "
+                + "(mq2, mq3, mq4, mq5, mq6, mq7, mq8, mq9, mq135, tgs822, tgs2600, tgs2602, tgs2603, data_hora, classe) "
+                + "values (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+        int s = 0;
+        while (s != segundos) {
+            s++;
             pst.setFloat(1, (gerador.nextFloat() * ((medMq2 + (desvMq2)) - (medMq2 - (desvMq2)))) + (medMq2 - (desvMq2)));
             pst.setFloat(2, (gerador.nextFloat() * ((medMq3 + (desvMq3)) - (medMq3 - (desvMq3)))) + (medMq3 - (desvMq3)));
             pst.setFloat(3, (gerador.nextFloat() * ((medMq4 + (desvMq4)) - (medMq4 - (desvMq4)))) + (medMq4 - (desvMq4)));
@@ -420,129 +416,94 @@ public class Principal {
             pst.setFloat(11, (gerador.nextFloat() * ((medTgs2600 + (desvTgs2600)) - (medTgs2600 - (desvTgs2600)))) + (medTgs2600 - (desvTgs2600)));
             pst.setFloat(12, (gerador.nextFloat() * ((medTgs2602 + (desvTgs2602)) - (medTgs2602 - (desvTgs2602)))) + (medTgs2602 - (desvTgs2602)));
             pst.setFloat(13, (gerador.nextFloat() * ((medTgs2603 + (desvTgs2603)) - (medTgs2603 - (desvTgs2603)))) + (medTgs2603 - (desvTgs2603)));
-            pst.setFloat(14, count);
+
+            Date dataInicial = new Date(dt.parse(dataHoraNovo).getTime());
+            Date dataAtual = new Date(dataInicial.getTime() + (1000 * s));
+            Timestamp timestamp = new Timestamp(dataAtual.getTime());
+
+            pst.setTimestamp(14, timestamp);
+            pst.setString(15, classe);
             pst.execute();
-            count++;
         }
 
-        resultPoeira10s = conecta.executaSQL("select * from poeira_10 "
-                + "where data_hora >= '" + dataHoraIniNovo + "' "
-                + "and data_hora <= '" + dataHoraFimNovo + "' "
-                + "order by data_hora");
-        id_min = 0;
-        id_max = 0;
-
-        if (resultPoeira10s.next()) {
-            id_min = resultPoeira10s.getInt("id_poeira_10");
-            while (resultPoeira10s.next());
-            resultPoeira10s.previous();
-            id_max = resultPoeira10s.getInt("id_poeira_10");
-        }
-
-        pst = conecta.getConnection().prepareStatement("update poeira_10 set poeira_10=? "
-                + "where id_poeira_10=?");
-        count = id_min;
-        while (count <= id_max) {
+        pst = conecta.getConnection().prepareStatement("insert into poeira_10 (poeira_10, data_hora, classe) values "
+                + "(?,?,?)");
+        s = 0;
+        while (s != segundos) {
+            s++;
             pst.setFloat(1, (gerador.nextFloat() * ((medPoeira10 + (desvPoeira10)) - (medPoeira10 - (desvPoeira10)))) + (medPoeira10 - (desvPoeira10)));
-            pst.setFloat(2, count);
+
+            Date dataInicial = new Date(dt.parse(dataHoraNovo).getTime());
+            Date dataAtual = new Date(dataInicial.getTime() + (1000 * s));
+            Timestamp timestamp = new Timestamp(dataAtual.getTime());
+
+            pst.setTimestamp(2, timestamp);
+            pst.setString(3, classe);
             pst.execute();
-            count++;
         }
 
-        resultPoeira25s = conecta.executaSQL("select * from poeira_25 "
-                + "where data_hora >= '" + dataHoraIniNovo + "' "
-                + "and data_hora <= '" + dataHoraFimNovo + "' "
-                + "order by data_hora");
-        id_min = 0;
-        id_max = 0;
-
-        if (resultPoeira25s.next()) {
-            id_min = resultPoeira25s.getInt("id_poeira_25");
-            while (resultPoeira25s.next());
-            resultPoeira25s.previous();
-            id_max = resultPoeira25s.getInt("id_poeira_25");
-        }
-
-        pst = conecta.getConnection().prepareStatement("update poeira_25 set poeira_25=? "
-                + "where id_poeira_25=?");
-        count = id_min;
-        while (count <= id_max) {
+        pst = conecta.getConnection().prepareStatement("insert into poeira_25 (poeira_25, data_hora, classe) values "
+                + "(?,?,?)");
+        s = 0;
+        while (s != segundos) {
+            s++;
             pst.setFloat(1, (gerador.nextFloat() * ((medPoeira25 + (desvPoeira25)) - (medPoeira25 - (desvPoeira25)))) + (medPoeira25 - (desvPoeira25)));
-            pst.setFloat(2, count);
+
+            Date dataInicial = new Date(dt.parse(dataHoraNovo).getTime());
+            Date dataAtual = new Date(dataInicial.getTime() + (1000 * s));
+            Timestamp timestamp = new Timestamp(dataAtual.getTime());
+
+            pst.setTimestamp(2, timestamp);
+            pst.setString(3, classe);
             pst.execute();
-            count++;
         }
 
-        resultPressaos = conecta.executaSQL("select * from pressao "
-                + "where data_hora >= '" + dataHoraIniNovo + "' "
-                + "and data_hora <= '" + dataHoraFimNovo + "' "
-                + "order by data_hora");
-        id_min = 0;
-        id_max = 0;
-
-        if (resultPressaos.next()) {
-            id_min = resultPressaos.getInt("id_pressao");
-            while (resultPressaos.next());
-            resultPressaos.previous();
-            id_max = resultPressaos.getInt("id_pressao");
-        }
-
-        pst = conecta.getConnection().prepareStatement("update pressao set pressao=? "
-                + "where id_pressao=?");
-        count = id_min;
-        while (count <= id_max) {
+        pst = conecta.getConnection().prepareStatement("insert into pressao (pressao, data_hora, classe) values "
+                + "(?,?,?)");
+        s = 0;
+        while (s != segundos) {
+            s++;
             pst.setFloat(1, (gerador.nextFloat() * ((medPressao + (desvPressao)) - (medPressao - (desvPressao)))) + (medPressao - (desvPressao)));
-            pst.setFloat(2, count);
+
+            Date dataInicial = new Date(dt.parse(dataHoraNovo).getTime());
+            Date dataAtual = new Date(dataInicial.getTime() + (1000 * s));
+            Timestamp timestamp = new Timestamp(dataAtual.getTime());
+
+            pst.setTimestamp(2, timestamp);
+            pst.setString(3, classe);
             pst.execute();
-            count++;
         }
 
-        resultTemperaturas = conecta.executaSQL("select * from temperatura "
-                + "where data_hora >= '" + dataHoraIniNovo + "' "
-                + "and data_hora <= '" + dataHoraFimNovo + "' "
-                + "order by data_hora");
-        id_min = 0;
-        id_max = 0;
-
-        if (resultTemperaturas.next()) {
-            id_min = resultTemperaturas.getInt("id_temperatura");
-            while (resultTemperaturas.next());
-            resultTemperaturas.previous();
-            id_max = resultTemperaturas.getInt("id_temperatura");
-        }
-
-        pst = conecta.getConnection().prepareStatement("update temperatura set temperatura=? "
-                + "where id_temperatura=?");
-        count = id_min;
-        while (count <= id_max) {
+        pst = conecta.getConnection().prepareStatement("insert into temperatura (temperatura, data_hora, classe) values "
+                + "(?,?,?)");
+        s = 0;
+        while (s != segundos) {
+            s++;
             pst.setFloat(1, (gerador.nextFloat() * ((medTemperatura + (desvTemperatura)) - (medTemperatura - (desvTemperatura)))) + (medTemperatura - (desvTemperatura)));
-            pst.setFloat(2, count);
+
+            Date dataInicial = new Date(dt.parse(dataHoraNovo).getTime());
+            Date dataAtual = new Date(dataInicial.getTime() + (1000 * s));
+            Timestamp timestamp = new Timestamp(dataAtual.getTime());
+
+            pst.setTimestamp(2, timestamp);
+            pst.setString(3, classe);
             pst.execute();
-            count++;
         }
 
-        resultUmidades = conecta.executaSQL("select * from umidade "
-                + "where data_hora >= '" + dataHoraIniNovo + "' "
-                + "and data_hora <= '" + dataHoraFimNovo + "' "
-                + "order by data_hora");
-        id_min = 0;
-        id_max = 0;
-
-        if (resultUmidades.next()) {
-            id_min = resultUmidades.getInt("id_umidade");
-            while (resultUmidades.next());
-            resultUmidades.previous();
-            id_max = resultUmidades.getInt("id_umidade");
-        }
-
-        pst = conecta.getConnection().prepareStatement("update umidade set umidade=? "
-                + "where id_umidade=?");
-        count = id_min;
-        while (count <= id_max) {
+        pst = conecta.getConnection().prepareStatement("insert into umidade (umidade, data_hora, classe) values "
+                + "(?,?,?)");
+        s = 0;
+        while (s != segundos) {
+            s++;
             pst.setFloat(1, (gerador.nextFloat() * ((medUmidade + (desvUmidade)) - (medUmidade - (desvUmidade)))) + (medUmidade - (desvUmidade)));
-            pst.setFloat(2, count);
+
+            Date dataInicial = new Date(dt.parse(dataHoraNovo).getTime());
+            Date dataAtual = new Date(dataInicial.getTime() + (1000 * s));
+            Timestamp timestamp = new Timestamp(dataAtual.getTime());
+
+            pst.setTimestamp(2, timestamp);
+            pst.setString(3, classe);
             pst.execute();
-            count++;
         }
     }
 }
